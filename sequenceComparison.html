@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+	tbody {
+		display: 		block;
+		height: 		10px;
+		padding: 		0px;
+	}
+
+	table {
+		margin-left:	50px;
+	}
+
+	.axis {
+		position:		absolute;
+    	top:			33px;
+    	left:			0px;
+	}
+</style>
+<body>
+<div id="option">
+    <input name="colorButton" 
+           type="button" 
+           value="Color Code" 
+           onclick="colorize()" />
+    <input name="normalButton" 
+           type="button" 
+           value="Normal" 
+           onclick="normal()" />
+</div>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script>
+
+	//Sample Data
+	var data = [
+		{"name": "Human", "value": "CGGTGGCCGTTATGTTCGTCATTCCGCCTAAACCCGCGGGGACATCGGACCTCGTACATTCTTCGAGCTATAGTCTTAGTTGGACATATGATCCGCTCCA"},
+		{"name": "Dog", "value": "TGCCACACGACAGTTACCAAGGATGATACTGGACGGGCCATCTTGGCTTTTTAGTGCTGACTGAGCAGGCGGATATTGGTCAACTTTGAGAATGTGTGTA"},
+		{"name": "Rat", "value": "AGCAGAATACCCAAGCGTGTCGAGCGGCTCCACCTCACCATGATAGCACGGCGTTTGAACCTCGGTCTGGGTAAGATGGAGGCGATGTATTGTGGAATTG"}
+	];
+
+	//Width changes with length of sequences
+	var width = data[0].value.length * 10;
+	//Height is size of 10px characters
+	var height = 10;
+
+	//Creates HTML table for each datum
+	var table = 	d3.select("body")
+						.append("table")
+						.selectAll("tbody")
+						.data(data)
+						.enter()
+						.append("tbody");
+	//Appends an SVG element to each table body 
+	var svg = 		d3.selectAll("tbody")
+						.append("svg")
+						.attr("width", width)
+						.attr("height", height);
+	
+	//Creates a horizontal scale, leaving room for labels on the left
+	var xScale = 	d3.scaleLinear()
+	               		.domain([0, data[0].value.length])
+	               		.range([0, width]);
+    //Creates a horizontal scale for the xAxis
+    var axisScale = d3.scaleLinear()
+	    				.domain([0, data[0].value.length])
+	               		.range([60, width + 60]);
+
+    //Creates axis along hte bottom
+    var xAxis = 	d3.axisBottom(axisScale);
+
+    //Appends an SVG element to the bottom of the data
+    var AxisSvg = 	d3.select("body")
+	    				.append("svg")
+	    				.attr("height", height * data.length + 30)
+	    				.attr("width", width + 70)
+	    				.attr("class", "axis");
+
+    			//Adds the name block
+    			AxisSvg.selectAll("rect")
+    					.data(data)
+    					.enter()
+    					.append("rect")
+    					.attr("x", 0)
+    					.attr("y", function(d, i) { return i * 10; })
+    					.attr("fill", "rgb(200,200,200)")
+    					.attr("stroke", "rgb(180,180,180)")
+    					.attr("width", 59)
+    					.attr("height", 10);
+    			//Adds the names for the sequence
+    			AxisSvg.selectAll("text")
+    					.data(data)
+    					.enter()
+    					.append("text")
+    					.attr("x", 59 / 2)
+    					.attr("y", function(d, i) { return i * 10 + 8.5; })
+    					.text(function(d) { return d.name; })
+    					.attr("font-family", "sans-serif")
+						.attr("font-size", "10px")
+						.attr("fill", "black")
+						.attr("text-anchor", "middle");
+
+		        //Adds backgrounds for the bases
+				svg.selectAll("tbody")
+				    .data(function(d) { return d.value; })
+				    .enter()
+				    .append("rect")
+					.attr("fill", "rgb(220,220,220)")
+					.attr("x", function(d, i) { return xScale(i); })
+					.attr("y", 0)
+					.attr("width", 10)
+					.attr("height", 10)
+					.attr("stroke", "rgb(200,200,200)");
+				//Adds the bases
+				svg.selectAll("td")
+					.data(function(d) { return d.value; })
+					.enter()
+					.append("text")
+					.text(function(d) { return d; })
+					.attr("x", function(d, i) { return xScale(i) + 1.5; })
+					.attr("y", 8.5)
+					.attr("font-family", "sans-serif")
+					.attr("font-size", "10px")
+					.attr("fill", "black");
+
+				//Calls the bottom axis
+				AxisSvg.append("g")
+					.attr("class", "axis")
+					.attr("transform", "translate(0," + (height * data.length) + ")")
+					.call(xAxis);
+
+	//Color codes the bases
+	function colorize() {
+				svg.selectAll("rect")
+					.data(function(d) { return d.value; })
+					.attr("fill", function(d) {
+						if( d == "A")
+							return "dodgerblue";
+						if( d == "C")
+							return "orange";
+						if( d == "G")
+							return "lightgreen";
+						if( d == "T")
+							return "orchid";
+					});
+	}
+
+	//Removes color coding on button press
+	function normal() {
+		svg.selectAll("rect")
+			.attr("fill", "rgb(220,220,220)");
+	}
+
+</script>
+</body>
