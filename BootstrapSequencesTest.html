@@ -19,6 +19,9 @@
     <script src="https://d3js.org/d3.v4.min.js"></script>
   </head>
   <style>
+      body{
+        font-family: "Lucida Console", Monaco, monospace;
+      }
       div {
         display: block;
       }
@@ -26,24 +29,18 @@
         font-family: "Lucida Console", Monaco, monospace;
       }
       div[class*=container-fluid] {
-        padding-top: 10px;
+        padding-top: 0px;
       }
-      div[class*=col-xs-1] {
-        padding: 0px;
+      div[class*=parent] {
+        padding-right: 0px;
+        padding-left: 10px;
+        padding-top: 5px;
       }
-      div[class*=col-xs-11] {
-        padding: 0px;
-        border-style: none;
+      .axis path{
+        stroke-width: 0px;
       }
-      div[class*=namePlate] {
-        background-color: rgba(220,220,220,.85);
-        padding: 0px;
-        border: solid;
-        border-width: 1px;
-        border-color: rgb(180,180,180);
-        border-radius: 5px;
-        text-align: center;
-        vertical-align: middle;
+      .axis line {
+        stroke-width: 1px;
       }
       p {
         margin: 0;
@@ -54,31 +51,28 @@
         padding-left: 10px;
         padding-top: 10px;
       }
-      .sequence {
-        word-wrap:    break-word;
-        background-color: rgba(220,220,220,.75);
+      .conRow {
+        white-space: nowrap;
       }
       .adenine {
-        word-wrap:    break-word;
         background-color: dodgerblue;
       }
       .cytosine {
-        word-wrap:    break-word;
         background-color: orange;
       }
       .guanine {
-        word-wrap:    break-word;
         background-color: lightgreen;
       }
       .thymine {
-        word-wrap:    break-word;
         background-color: orchid;
       }
   </style>
   <body>
     <p class="buttons">
-      <button type="button" class="btn btn-default btn-sm" onclick="defaultize()">Default</button>
+      <button type="button" class="btn btn-default btn-sm" onclick="resize()">Default</button>
       <button type="button" class="btn btn-primary btn-sm" onclick="colorize()">Color Code</button>
+      <button type="button" class="btn btn-success btn-sm" onclick="sameChar()">Same Character</button>
+      <button type="button" class="btn btn-info btn-sm" data-toggle="collapse" data-target=".conRow">Consensus</button>
     </p>
     <script>
 
@@ -89,85 +83,134 @@
           {"name": "Rat", "value": "AGCAGAATACCCAAGCGTGTCGAGCGGCTCCACCTCACCATGATAGCACGGCGTTTGAACCTCGGTCTGGGTAAGATGGAGGCGATGTATTGTGGAATTG"}
         ];
 
+        //Creates array based on first sequence
+        var firstSequence = data[0].value.split("");
+
+        /* Base divs */ 
+
         //Creates div container to hold everything
         var container = d3.select("body")
                           .append("div")
                           .attr("class", "container-fluid");
-
-                        //Creates a row for each datum and creates the names column
-        var row       = container.selectAll("div")
-                          .data(data)
-                          .enter()
-                          .append("div")
-                          .attr("class", "row")
-                          
-                        //Appends names
-                        row.append("div")
-                          .attr("class", "col-xs-1")
-                          .append("div")
-                          .attr("class", "namePlate")
-                          .append("p")
-                          .selectAll("p")
-                          .data(function(d) { return d.name; })
-                          .enter()
-                          .append("text")
-                          .text(function(d, i) { return d; });
-
-                        //Appends sequences
-        var sequences = row.append("div")
-                          .attr("class", "col-xs-11")
-                          .append("p")
-                          .selectAll("text")
-                          .data(function(d) { return d.value; })
-                          .enter()
-                          .append("text")
-                          .text(function(d) { return d; })
-                          .attr("class", "sequence");
-
-                        //Creates row for axis
+        //Creates row for axis
         var axisRow   = container.append("div")
                           .attr("class", "row");
-
+                        //Creates column to keep axis aligned with sequences
                         axisRow.append("div")
-                          .attr("class", "col-xs-1");
-                        
+                          .attr("class", "col-xs-1");   
+
+        var conString = findConsensus();
+
+        //Creates table
+        createData();            
+
+        /* Axis */
+
+                        //Creates col for axis svg
         var svgCol    = axisRow.append("div")
                           .attr("class", "col-xs-11")
                           .attr("id", "area");
-
         var width     = parseInt(d3.select("#area").style("width"), 10);
-                        //Appends svg to bottom row
+                        //Appends svg to top row
         var svg       = svgCol.append("svg")
                           .attr("width", width)
-                          .attr("height", 50);
+                          .attr("height", 25);
                         //Horizontal scale
         var xScale    = d3.scaleLinear()
                           .domain([0, data[0].value.length])
                           .range([0, data[0].value.length * 8.42]);
                         //Creates axis
-        var xAxis     = d3.axisBottom(xScale);
-
+        var xAxis     = d3.axisTop(xScale);
                         //Calls the bottom axis
                         svg.append("g")
                           .attr("class", "axis")
-                          .attr("transform", "translate(0,5)")
+                          .attr("transform", "translate(-5,25)")
                           .call(xAxis)
                           .select("text").remove();
 
                         //Resizes svg and its elements to fit to window
                         d3.select(window).on('resize', resize);
 
-        function resize() {
-                
-                width = parseInt(d3.select('#area').style('width'), 10);
-                        
-                        svgCol.selectAll("svg")
-                          .attr("width", width);
+        function findConsensus() {
+                            var Acount = 0,
+                             Ccount = 0,
+                             Gcount = 0,
+                             Tcount = 0;
+                            var string = "";
+                            var consensus = "";
+                            for( var base = 0; base < firstSequence.length; base++) {
+                              //Counts how many of each base for each location
+                              for( var seq = 0; seq < data.length; seq++ ) {
+                                if( data[seq].value.split("")[base] == "A" )
+                                  Acount++;
+                                if( data[seq].value.split("")[base] == "G" )
+                                  Gcount++;
+                                if( data[seq].value.split("")[base] == "C" )
+                                  Ccount++;
+                                if( data[seq].value.split("")[base] == "T" )
+                                  Tcount++;
+                              }
+                              //Checks which base occurs most frequently (if any)
+                              if( Math.max(Acount, Gcount, Ccount, Tcount) == Acount ) {
+                                if( Acount == Gcount || Acount == Ccount || Acount == Tcount )
+                                  string = "?"
+                                else
+                                  string = "A";
+                              }
+                              else if( Math.max(Acount, Gcount, Ccount, Tcount) == Gcount ) {
+                                if( Gcount == Ccount || Gcount == Tcount )
+                                  string = "?";
+                                else
+                                  string = "G";
+                              }  
+                              else if( Math.max(Acount, Gcount, Ccount, Tcount) == Ccount ) {
+                                if( Ccount == Tcount )
+                                  string = "?";
+                                else
+                                  string = "C";
+                              }
+                              else if( Math.max(Acount, Gcount, Ccount, Tcount) == Tcount )
+                                string = "T";
+                              Acount = 0;
+                              Gcount = 0;
+                              Ccount = 0;
+                              Tcount = 0;
+
+                            //Saves total consensus for later use
+                            consensus = consensus + string;
+
+                            }
+                            //Returns most frequent base
+                            return consensus;
+                          }
+
+        function checkFunction(input) {
+          if ( input == 0 )
+            return 0;
+          if ( input != 0 )
+            return input + 1;
         }
 
+        //Resizes axis with window
+        function resize() {
+                
+                //Axis resize
+                width = parseInt(d3.select("#area").style("width"), 10);
+                
+                        svgCol.selectAll("svg")
+                          .attr("width", width);
+
+                container.selectAll(".parent")
+                  .remove();
+
+                createData();
+
+
+        }
+
+        //Color codes sequences on button press
         function colorize() {
-                        row.selectAll("p")
-                          .filter(function(d, i) { return i === 1;})
+                        container.selectAll("#seqSpace")
                           .selectAll("text")
                           .data(function(d) { return d.value; } )
                           .attr("class", function(d) {
@@ -182,12 +225,118 @@
                           });
         };
 
-        function defaultize() {
-                        row.selectAll("p")
-                          .filter(function(d, i) { return i === 1;})
-                          .selectAll("text")
-                          .attr("class", "sequence");
-        };
+
+        //Removes characters that do not match the first sequence on button press
+        function sameChar() {
+                        
+                      }
+
+        function createData() {
+            var cutoff = 0;
+            var newCutOff = 0;
+
+            /* Wrapping */
+
+            //Creates a new row for sequences that were cut off
+            for( ; cutoff != firstSequence.length - 1; ) {
+                //Creates row for data
+
+                var parent    = container.append("div")
+                                  .attr("class", "row parent");
+
+                var row       = parent.selectAll("rows")
+                                  .data(data)
+                                  .enter()
+                                  .append("div")
+                                  .attr("class", "row resizer");
+                //Creates row for consensus
+                var conRow    = parent.append("div")
+                                  .attr("class", "row collapse conRow resizer")
+                                  .attr("id", "conRow");
+
+                /* Names */
+
+                //Appends name column
+                var nameCol   = row.append("div")
+                                  .attr("class", "col-xs-1") 
+                                  .attr("id", "namePlate")
+                                  .attr("data-toggle", "tooltip")
+                                  .attr("title", function(d) { return d.name;})
+                                  .append("p");
+                //Finds the width of the name column
+                var nameWidth = parseInt(d3.select('#namePlate').style('width'), 10);
+                                //Enters the name
+                                nameCol.selectAll("p")
+                                  .data(function(d, i) { return d.name.split(""); })
+                                  .enter()
+                                  .append("text")
+                                  .text(function(d, i) { 
+                                    //Truncates if name is too long
+                                    if( i * 8.42 >= nameWidth - 3 * 8.42 - 10) {
+                                      if( (i - 1) * 8.42 >= nameWidth - 3 * 8.42 - 10) { return ""; }
+                                      else { return "..."; } 
+                                    };
+                                    if ( i * 8.42 < nameWidth - 3 * 8.42 - 10) {
+                                      return d; 
+                                  }});
+
+                /* Sequences */
+
+                //Appends sequence columns
+                var sequences = row.append("div")
+                                  .attr("class", "col-xs-11")
+                                  .attr("id", "seqSpace")
+                                  .append("p");
+                //Finds the width of the sequence column
+                var seqWidth = parseInt(d3.select('#seqSpace').style('width'), 10);
+                                  //Enters the sequences
+                                  sequences.selectAll("text")
+                                  .data(function(d) { return d.value; })
+                                  .enter()
+                                  .append("text")
+                                  .text(function(d, i) {
+                                    //Does not enter same base twice
+                                    if ( i < cutoff)
+                                      return ;
+                                    if ( i != 0 && i == cutoff )
+                                      return ;
+                                    //Truncates part that doesnt fit in window
+                                    if ( (i - cutoff) * 8.42 < seqWidth - 4 * 8.42 ) {
+                                      //Saves last base to be entered
+                                      newCutOff = i;
+                                      return d;    
+                                  }})
+                                  .attr("class", "sequence");
+
+                /* Consensus */
+
+                                //Writes "Consensus" name plate
+                                conRow.append("div")
+                                  .attr("class", "col-xs-1")
+                                  .attr("data-toggle", "tooltip")
+                                  .attr("id", "conName")
+                                  .append("p")
+                                  .append("text")
+                                  .text(function() {
+                                    //Truncates name if too long
+                                    if( "Consensus".length * 8.42 > nameWidth )
+                                      return "Consensus".substring(0, Math.floor(nameWidth / 8.42 ) - 3) + "...";
+                                    else 
+                                      return "Consensus";
+                                  });
+
+                                //Enters the consensus of the sequences
+                                conRow.append("div")
+                                  .attr("class", "col-xs-11")
+                                  .append("p")
+                                  .append("text")
+                                  .text(conString.substring( checkFunction(cutoff) , newCutOff + 1 ));
+
+                                cutoff = newCutOff;
+            }
+        }
+
+
     </script>
   </body>
 </html>
