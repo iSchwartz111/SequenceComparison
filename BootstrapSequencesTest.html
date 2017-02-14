@@ -75,19 +75,15 @@
       <button type="button" class="btn btn-info btn-sm" data-toggle="collapse" data-target=".conRow">Consensus</button>
     </p>
     <script>
-
         //Sample Data
         var data = [
           {"name": "Human", "value": "CGGTGGCCGTTATGTTCGTCATTCCGCCTAAACCCGCGGGGACATCGGACCTCGTACATTCTTCGAGCTATAGTCTTAGTTGGACATATGATCCGCTCCA"},
           {"name": "Dog", "value": "TGCCACACGACAGTTACCAAGGATGATACTGGACGGGCCATCTTGGCTTTTTAGTGCTGACTGAGCAGGCGGATATTGGTCAACTTTGAGAATGTGTGTA"},
           {"name": "Rat", "value": "AGCAGAATACCCAAGCGTGTCGAGCGGCTCCACCTCACCATGATAGCACGGCGTTTGAACCTCGGTCTGGGTAAGATGGAGGCGATGTATTGTGGAATTG"}
         ];
-
         //Creates array based on first sequence
         var firstSequence = data[0].value.split("");
-
         /* Base divs */ 
-
         //Creates div container to hold everything
         var container = d3.select("body")
                           .append("div")
@@ -98,14 +94,10 @@
                         //Creates column to keep axis aligned with sequences
                         axisRow.append("div")
                           .attr("class", "col-xs-1");   
-
         var conString = findConsensus();
-
         //Creates table
         createData();            
-
         /* Axis */
-
                         //Creates col for axis svg
         var svgCol    = axisRow.append("div")
                           .attr("class", "col-xs-11")
@@ -127,7 +119,7 @@
                           .attr("transform", "translate(-5,25)")
                           .call(xAxis)
                           .select("text").remove();
-
+                          
                         //Resizes svg and its elements to fit to window
                         d3.select(window).on('resize', resize);
 
@@ -175,22 +167,18 @@
                               Gcount = 0;
                               Ccount = 0;
                               Tcount = 0;
-
                             //Saves total consensus for later use
                             consensus = consensus + string;
-
                             }
                             //Returns most frequent base
                             return consensus;
                           }
-
         function checkFunction(input) {
           if ( input == 0 )
             return 0;
           if ( input != 0 )
             return input + 1;
         }
-
         //Resizes axis with window
         function resize() {
                 
@@ -199,15 +187,12 @@
                 
                         svgCol.selectAll("svg")
                           .attr("width", width);
-
+                
                 container.selectAll(".parent")
                   .remove();
-
+                
                 createData();
-
-
         }
-
         //Color codes sequences on button press
         function colorize() {
                         container.selectAll("#seqSpace")
@@ -224,26 +209,46 @@
                               return "thymine";
                           });
         };
-
-
         //Removes characters that do not match the first sequence on button press
         function sameChar() {
+                  var box = 0;
+                  var seqWidth = parseInt(d3.select('#seqSpace').style('width'), 10);
+
+                  for( var end = 0; end != firstSequence.length - 1; box++ ) {
+
+
+                    container.selectAll(".parent")
+                      .filter(function(d, i) { return i === box; })
+                      .selectAll("#seqSpace")
+                      .selectAll("text")
+                      .data(function(d) { return d.value; })
+                      .text(function(d, i) {
+                            if ( i < end )
+                              return ;
+                            if ( i != 0 && i == end )
+                              return ;
+                              //Truncates part that doesnt fit in window
+                            if ( (i - end) * 8.42 < seqWidth - 4 * 8.42 ) {
+                              //Saves last base to be entered
+                              newEnd = i;                             
+                              if( d == firstSequence[i] )
+                                return d;
+                              else
+                                return ".";
+                            }
+                      }); 
+                    end = newEnd;
+                  };
+        }
                         
-                      }
-
         function createData() {
-            var cutoff = 0;
-            var newCutOff = 0;
-
+          var newCutOff = 0;
             /* Wrapping */
-
             //Creates a new row for sequences that were cut off
-            for( ; cutoff != firstSequence.length - 1; ) {
+            for( var cutoff = 0; cutoff != firstSequence.length - 1; cutoff = newCutOff ) {
                 //Creates row for data
-
                 var parent    = container.append("div")
                                   .attr("class", "row parent");
-
                 var row       = parent.selectAll("rows")
                                   .data(data)
                                   .enter()
@@ -253,9 +258,7 @@
                 var conRow    = parent.append("div")
                                   .attr("class", "row collapse conRow resizer")
                                   .attr("id", "conRow");
-
                 /* Names */
-
                 //Appends name column
                 var nameCol   = row.append("div")
                                   .attr("class", "col-xs-1") 
@@ -279,9 +282,7 @@
                                     if ( i * 8.42 < nameWidth - 3 * 8.42 - 10) {
                                       return d; 
                                   }});
-
                 /* Sequences */
-
                 //Appends sequence columns
                 var sequences = row.append("div")
                                   .attr("class", "col-xs-11")
@@ -307,9 +308,7 @@
                                       return d;    
                                   }})
                                   .attr("class", "sequence");
-
                 /* Consensus */
-
                                 //Writes "Consensus" name plate
                                 conRow.append("div")
                                   .attr("class", "col-xs-1")
@@ -324,19 +323,14 @@
                                     else 
                                       return "Consensus";
                                   });
-
                                 //Enters the consensus of the sequences
                                 conRow.append("div")
                                   .attr("class", "col-xs-11")
                                   .append("p")
                                   .append("text")
                                   .text(conString.substring( checkFunction(cutoff) , newCutOff + 1 ));
-
-                                cutoff = newCutOff;
             }
         }
-
-
     </script>
   </body>
 </html>
