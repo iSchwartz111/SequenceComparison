@@ -74,10 +74,9 @@
         background-color: orchid;
       }
   </style>
-  <body>
+    <body>
     <p class="buttons">
-      <button type="button" class="btn btn-default btn-sm" onclick="resize()">Default</button>
-      <button type="button" class="btn btn-primary btn-sm" onclick="colorize()">Color Code</button>
+      <button type="button" class="btn btn-primary btn-sm" onclick="checkColor()">Color Code</button>
       <button type="button" class="btn btn-success btn-sm" onclick="sameChar()">Same Character</button>
       <button type="button" class="btn btn-info btn-sm" data-toggle="collapse" data-target=".conRow">Consensus</button>
     </p>
@@ -102,6 +101,10 @@
                         axisRow.append("div")
                           .attr("class", "col-xs-1");   
         var conString = findConsensus();
+
+        var isColor = false;
+        var isSame  = false;
+        var uncollapsed = false;
         //Creates table
         createData();            
         /* Axis */
@@ -188,19 +191,35 @@
         }
         //Resizes axis with window
         function resize() {
-                
                 //Axis resize
                 width = parseInt(d3.select("#area").style("width"), 10);
                 
                         svgCol.selectAll("svg")
                           .attr("width", width);
                 
-                container.selectAll(".parent")
-                  .remove();
+                        container.selectAll(".parent")
+                          .remove();
                 
-                createData();
+                        createData();
         }
         //Color codes sequences on button press
+        function checkColor() {
+
+                      if( isColor == true ) {
+                        container.selectAll("#seqSpace")
+                          .selectAll("text")
+                          .data(function(d) { return d.value; } )
+                          .attr("class", "sequence");
+                        isColor = false;
+                        return ;
+                      };
+
+                      if( isColor == false ) {
+                        isColor = true;
+                        colorize();
+                        return ;
+                      }
+        };
         function colorize() {
                         container.selectAll("#seqSpace")
                           .selectAll("text")
@@ -215,15 +234,12 @@
                             if( d == "T")
                               return "thymine";
                           });
-        };
+        }
         //Removes characters that do not match the first sequence on button press
         function sameChar() {
                   var box = 0;
                   var seqWidth = parseInt(d3.select('#seqSpace').style('width'), 10);
-
                   for( var end = 0; end != firstSequence.length - 1; box++ ) {
-
-
                     container.selectAll(".parent")
                       .filter(function(d, i) { return i === box; })
                       .selectAll("#seqSpace")
@@ -237,17 +253,21 @@
                               //Truncates part that doesnt fit in window
                             if ( (i - end) * 8.42 < seqWidth - 4 * 8.42 ) {
                               //Saves last base to be entered
-                              newEnd = i;                             
-                              if( d == firstSequence[i] )
+                              newEnd = i;
+                              if( isSame == false ) {                       
+                                if( d == firstSequence[i] )
+                                  return d;
+                                else
+                                  return ".";
+                              };
+                              if( isSame == true )
                                 return d;
-                              else
-                                return ".";
                             }
                       }); 
                     end = newEnd;
                   };
-        }
-                        
+                  isSame = !isSame;
+                }         
         function createData() {
           var newCutOff = 0;
             /* Wrapping */
@@ -296,14 +316,14 @@
                                   .attr("id", "seqSpace")
                                   .append("p");
                 //Finds the width of the sequence column
-                var seqWidth = parseInt(d3.select('#seqSpace').style('width'), 10);
+                var seqWidth  = parseInt(d3.select('#seqSpace').style('width'), 10);
                                   //Enters the sequences
                                   sequences.selectAll("text")
                                   .data(function(d) { return d.value; })
                                   .enter()
                                   .append("text")
                                   .text(function(d, i) {
-                                    //Does not enter same base twice
+                                    //Does not enter same base twice                                 
                                     if ( i < cutoff)
                                       return ;
                                     if ( i != 0 && i == cutoff )
@@ -312,9 +332,23 @@
                                     if ( (i - cutoff) * 8.42 < seqWidth - 4 * 8.42 ) {
                                       //Saves last base to be entered
                                       newCutOff = i;
-                                      return d;    
-                                  }})
+                                      //Checks for sameChar toggle
+                                      if( isSame == false ) {
+                                        return d;
+                                      }
+                                      if( isSame == true ) {                       
+                                        if( d == firstSequence[i] )
+                                          return d;
+                                        else
+                                          return ".";
+                                      } 
+                                    }})
                                   .attr("class", "sequence");
+                                //Keeps cells colored through resize
+                                if( isColor == true ) {
+                                  colorize();
+                                };
+
                 /* Consensus */
                                 //Writes "Consensus" name plate
                                 conRow.append("div")
