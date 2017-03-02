@@ -155,28 +155,19 @@
                                 var indexMax = _.indexOf( numBases, maximum );
 
                                 //Appends most frequent base to consensus
-                                if( indexMax == _.lastIndexOf( numBases, maximum )) {
-                                  if( indexMax == 0 )
-                                    consensus += "A";
-                                  if( indexMax == 1 )
-                                    consensus += "C";
-                                  if( indexMax == 2 )
-                                    consensus += "G";
-                                  if( indexMax == 3 )
-                                    consensus += "T"; 
-                                }
+                                if( indexMax == _.lastIndexOf( numBases, maximum ))
+                                  switch( indexMax ) {
+                                    case 0: consensus += "A"; break;
+                                    case 1: consensus += "C"; break;
+                                    case 2: consensus += "G"; break;
+                                    case 3: consensus += "T"; break;
+                                  }
                                 else
                                   consensus += "?";
                               }
                             return consensus;
          }
 
-        function checkFunction(input) {
-          if ( input == 0 )
-            return 0;
-          if ( input != 0 )
-            return input + 1;
-        }
         //Resizes axis with window
         function resize() {
                 //Axis resize
@@ -311,13 +302,13 @@
                                   .enter()
                                   .append("text")
                                   .text(function(d, i) {
-                                    //Does not enter same base twice                                 
-                                    if ( i < cutoff)
+                                    //Does not enter same base twice                        
+                                    if ( i < cutoff )
                                       return ;
                                     if ( i != 0 && i == cutoff )
                                       return ;
                                     //Truncates part that doesnt fit in window
-                                    if ( (i - cutoff) * 8.42 < seqWidth - 4 * 8.42 ) {
+                                    if ( (i - (cutoff ? cutoff : -1)) * 8.42 < seqWidth - 4 * 8.42 - 15) {
                                       //Saves last base to be entered
                                       newCutOff = i;
                                       //Checks for sameChar toggle
@@ -351,13 +342,14 @@
                                       return "Consensus".substring(0, Math.floor(nameWidth / 8.42 ) - 3) + "...";
                                     else 
                                       return "Consensus";
-                                  });
+                                  })
                                 //Enters the consensus of the sequences
                                 conRow.append("div")
                                   .attr("class", "col-xs-11")
                                   .append("p")
                                   .append("text")
-                                  .text(conString.substring( checkFunction(cutoff) , newCutOff + 1 ));
+                                  .text(conString.substring( cutoff ? cutoff + 1 : 0 , newCutOff + 1 ))
+                                  .attr("class", "conText");
             }
         }
     </script>
