@@ -139,55 +139,38 @@
                         d3.select(window).on('resize', resize);
 
         function findConsensus() {
-                            var Acount = 0,
-                             Ccount = 0,
-                             Gcount = 0,
-                             Tcount = 0;
-                            var string = "";
                             var consensus = "";
-                            for( var base = 0; base < firstSequence.length; base++) {
-                              //Counts how many of each base for each location
+
+                            //Counts each bases' occurrence
+                            for( var base = 0; base < firstSequence.length; base++ ) {
+                              var compare = [];
                               for( var seq = 0; seq < data.length; seq++ ) {
-                                if( data[seq].value.split("")[base] == "A" )
-                                  Acount++;
-                                if( data[seq].value.split("")[base] == "G" )
-                                  Gcount++;
-                                if( data[seq].value.split("")[base] == "C" )
-                                  Ccount++;
-                                if( data[seq].value.split("")[base] == "T" )
-                                  Tcount++;
+                                compare[seq] = data[seq].value.split("")[base];
                               }
-                              //Checks which base occurs most frequently (if any)
-                              if( Math.max(Acount, Gcount, Ccount, Tcount) == Acount ) {
-                                if( Acount == Gcount || Acount == Ccount || Acount == Tcount )
-                                  string = "?"
+                                var countBase = _.countBy( compare);
+                                var numBases = [countBase.A, countBase.C, countBase.G, countBase.T];
+                                var maximum = _.max( numBases );
+
+                                //Checks there is only one maximum
+                                var indexMax = _.indexOf( numBases, maximum );
+
+                                //Appends most frequent base to consensus
+                                if( indexMax == _.lastIndexOf( numBases, maximum )) {
+                                  if( indexMax == 0 )
+                                    consensus += "A";
+                                  if( indexMax == 1 )
+                                    consensus += "C";
+                                  if( indexMax == 2 )
+                                    consensus += "G";
+                                  if( indexMax == 3 )
+                                    consensus += "T"; 
+                                }
                                 else
-                                  string = "A";
+                                  consensus += "?";
                               }
-                              else if( Math.max(Acount, Gcount, Ccount, Tcount) == Gcount ) {
-                                if( Gcount == Ccount || Gcount == Tcount )
-                                  string = "?";
-                                else
-                                  string = "G";
-                              }  
-                              else if( Math.max(Acount, Gcount, Ccount, Tcount) == Ccount ) {
-                                if( Ccount == Tcount )
-                                  string = "?";
-                                else
-                                  string = "C";
-                              }
-                              else if( Math.max(Acount, Gcount, Ccount, Tcount) == Tcount )
-                                string = "T";
-                              Acount = 0;
-                              Gcount = 0;
-                              Ccount = 0;
-                              Tcount = 0;
-                            //Saves total consensus for later use
-                            consensus = consensus + string;
-                            }
-                            //Returns most frequent base
                             return consensus;
-                          }
+         }
+
         function checkFunction(input) {
           if ( input == 0 )
             return 0;
