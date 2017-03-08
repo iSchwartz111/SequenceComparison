@@ -140,7 +140,7 @@
         var width     = parseInt(d3.select("#area").style("width"), 10);
                         //Appends svg to top row
         var svg       = svgCol.append("svg")
-                          .attr("width", width)
+                          .attr("width", width - 25)
                           .attr("height", 25);
                         //Horizontal scale
         var xScale    = d3.scaleLinear()
@@ -242,7 +242,7 @@
                 width = parseInt(d3.select("#area").style("width"), 10);
                 
                         svgCol.selectAll("svg")
-                          .attr("width", width);
+                          .attr("width", width - 25);
                         //Removes data that is outside window
                         container.selectAll(".parent")
                           .remove();
@@ -380,7 +380,7 @@
                                     if ( i != 0 && i == cutoff )
                                       return ;
                                     //Truncates part that doesnt fit in window
-                                    if ( (i - (cutoff ? cutoff : -1)) * 8.42 < seqWidth - 4 * 8.42 - 15) {
+                                    if ( (i - (cutoff ? cutoff + 1 :0)) * 8.42 < seqWidth - 4 * 8.42 - 15) {
                                       //Saves last base to be entered
                                         newCutOff = i;
                                       //Checks for sameChar toggle
@@ -409,6 +409,7 @@
                                 conRow.append("div")
                                   .attr("class", "col-xs-1")
                                   .attr("data-toggle", "tooltip")
+								  .attr("title", "Consensus")
                                   .append("p")
                                   .append("text")
                                   .text(function() {
@@ -423,7 +424,7 @@
                                   .attr("class", "col-xs-11")
                                   .append("p")
                                   .append("text")
-                                  .text(conString.substring( cutoff ? 1 : 0 , newCutOff + 1 ))
+                                  .text(conString.substring( cutoff ? cutoff + 1: 0 , newCutOff + 1 ))
                                   .attr("class", "conText");
 
                 /* Heat Map */
@@ -434,14 +435,15 @@
                                 annotRow.append("div")
                                   .attr("class", "col-xs-1")
                                   .attr("data-toggle", "tooltip")
+								  .attr("title", "Frequency")
                                   .append("p")
                                   .append("text")
                                   .text(function() {
                                     //Truncates if too long
-                                    if( "Annotation".length * 8.42 > nameWidth )
-                                      return "Annotation".substring(0, Math.floor(nameWidth / 8.42 ) - 3) + "...";
+                                    if( "Frequency".length * 8.42 > nameWidth )
+                                      return "Frequency".substring(0, Math.floor(nameWidth / 8.42 ) - 3) + "...";
                                     else 
-                                      return "Annotation";
+                                      return "Frequency";
                                   });
                                 //Creates heatmap annotation
                                 annotRow.append("div")
