@@ -65,6 +65,10 @@
       }
       .conRow {
         white-space: nowrap;
+        font-style: italic;
+      }
+      .conText {
+        background-color: lightgray;
       }
       .adenine {
         background-color: dodgerblue;
@@ -88,12 +92,13 @@
     <script>
         //Sample Data
         var data = [
-          {"name": "Human", "value": "CGGTGGCCGTTATGTTCGTCATTCCGCCTAAACCCGCGGGGACATCGGACCTCGTACATTCTTCGAGCTATAGTCTTAGTTGGACATATGATCCGCTCCA"},
-          {"name": "Dog", "value": "TGCCACACGACAGTTACCAAGGATGATACTGGACGGGCCATCTTGGCTTTTTAGTGCTGACTGAGCAGGCGGATATTGGTCAACTTTGAGAATGTGTGTA"},
-          {"name": "Rat", "value": "AGCAGAATACCCAAGCGTGTCGAGCGGCTCCACCTCACCATGATAGCACGGCGTTTGAACCTCGGTCTGGGTAAGATGGAGGCGATGTATTGTGGAATTG"}
+          {"name": "Human", "value": "CGGTGGCCGTTATGTTCGTCATTCCGCCTAAACCGTCGAGGGGACATCGGACCTCGTACATTCTTCGAGCTATAGTCTTAGTTGGACATATGATCCGCTC"},
+          {"name": "Dog", "value":   "TGCCACACGACAGTTACCAAGGATGATACTGGACGTCGACCATCTTGGCTTTTTAGTGCTGACTGAGCAGGCGGATATTGGTCAACTTTGAGAATGTGTG"},
+          {"name": "Rat", "value":   "AGCAGAATACCCAAGCGTGTCGAGCGGCTCCACCGTCGACCATGATAGCACGGCGTTTGAACCTCGGTCTGGGTAAGATGGAGGCGATGTATTGTGGAAT"}
         ];
         //Creates array based on first sequence
         var firstSequence = data[0].value.split("");
+
         /* Base divs */ 
         //Creates div container to hold everything
         var container = d3.select("body")
@@ -106,12 +111,27 @@
                         axisRow.append("div")
                           .attr("class", "col-xs-1");   
         var conString = findConsensus();
+        var continuous = findContinuous();
+        var annotArray = findHeat(continuous);
 
-        var isColor = false;
-        var isSame  = false;
+
+        var heatScale = d3.scaleLinear()
+                          .domain([0, _.max(annotArray)])
+                          .range([0,1]);
+
+                          for(var i = 0; i < firstSequence.length; i++) {
+                            annotArray[i] = heatScale(annotArray[i]);
+                          };
+
+        var heat      = d3.interpolateLab("steelblue", "DarkOrange");
+
+        var isColor   = false;
+        var isSame    = false;
         var uncollapsed = false;
+        
         //Creates table
-        createData();            
+        createData();   
+        
         /* Axis */
                         //Creates col for axis svg
         var svgCol    = axisRow.append("div")
@@ -134,40 +154,88 @@
                           .attr("transform", "translate(-5,25)")
                           .call(xAxis)
                           .select("text").remove();
-                          
+                        
                         //Resizes svg and its elements to fit to window
-                        d3.select(window).on('resize', resize);
+        var highlight = d3.select(window).on('resize', resize);
+                        d3.selectAll("#seqSpace").on("mouseup", selector);
 
+        function selector() {
+              var selection = window.getSelection();
+              console.log(selection.toString());
+              var range = selection.getRangeAt(0);
+              console.log(range);
+              
+        }
+        //Finds the most common base in each column and returns it as a string
         function findConsensus() {
-                            var consensus = "";
+              var consensus = "";
 
-                            //Counts each bases' occurrence
-                            for( var base = 0; base < firstSequence.length; base++ ) {
-                              var compare = [];
-                              for( var seq = 0; seq < data.length; seq++ ) {
-                                compare[seq] = data[seq].value.split("")[base];
-                              }
-                                var countBase = _.countBy( compare);
-                                var numBases = [countBase.A, countBase.C, countBase.G, countBase.T];
-                                var maximum = _.max( numBases );
+              //Counts each bases' occurrence
+              for( var base = 0; base < firstSequence.length; base++ ) {
+                var compare = [];
+                for( var seq = 0; seq < data.length; seq++ ) {
+                  compare[seq] = data[seq].value.split("")[base];
+                }
+                var countBase = _.countBy( compare);
+                var numBases = [countBase.A, countBase.C, countBase.G, countBase.T];
+                var maximum = _.max( numBases );
 
-                                //Checks there is only one maximum
-                                var indexMax = _.indexOf( numBases, maximum );
+                //Checks there is only one maximum
+                var indexMax = _.indexOf( numBases, maximum );
 
-                                //Appends most frequent base to consensus
-                                if( indexMax == _.lastIndexOf( numBases, maximum ))
-                                  switch( indexMax ) {
-                                    case 0: consensus += "A"; break;
-                                    case 1: consensus += "C"; break;
-                                    case 2: consensus += "G"; break;
-                                    case 3: consensus += "T"; break;
-                                  }
-                                else
-                                  consensus += "?";
-                              }
-                            return consensus;
-         }
+                //Appends most frequent base to consensus
+                if( indexMax == _.lastIndexOf( numBases, maximum ))
+                  switch( indexMax ) {
+                    case 0: consensus += "A"; break;
+                    case 1: consensus += "C"; break;
+                    case 2: consensus += "G"; break;
+                    case 3: consensus += "T"; break;
+                  }
+                else
+                  consensus += "?";
+              }
+              return consensus;
+        }
+        //Find continuous values for the heatmap. Returns array of with element 1 for continuous base, 0 otherwise
+        function findContinuous() {
+                var annotation = [];
+                //Counts each bases' occurence
+                for( var base = 0; base < firstSequence.length; base++ ) {
+                  var compare = [];
+                  for( var seq = 0; seq < data.length; seq++ ) {
+                    compare[seq] = data[seq].value.split("")[base];
+                  }
+                  //Checks that base is continuous
+                  (_.uniq(compare).length == 1) ? annotation[base] = 1 : annotation[base] = 0;
+                }
+                return annotation;
+        }
+        //Uses array of 0's and 1's to find how "hot" each element of the heat map is. Returns array with heat values.
+        function findHeat(array) {
+                            //Creates 0 array
+                var heatArray = Array.apply(null, Array(firstSequence.length)).map(Number.prototype.valueOf,0);
+                var count = 0;
+                for( var i = 0; i < firstSequence.length; ) {
+                    var a = 0;
+                  if( array[i] == 1) {
+                    count = _.indexOf(array.slice(i), 0);
 
+                    for( var j = 0; j < count; j++) {
+                      if( j == count / 2 ) {
+                        heatArray[i] = a;
+                        i++;
+                      }
+                      (j < count / 2) ? a++ : a--;
+                      heatArray[i] = a;
+                      i++;
+                    }
+                  }
+                  else
+                    i++;
+                }
+
+                return heatArray;
+        }
         //Resizes axis with window
         function resize() {
                 //Axis resize
@@ -175,19 +243,24 @@
                 
                         svgCol.selectAll("svg")
                           .attr("width", width);
-                
+                        //Removes data that is outside window
                         container.selectAll(".parent")
                           .remove();
-                
+                        //Recreates data inside window
                         createData();
+
+                var highlight = d3.select(window).on('resize', resize);
+                        d3.selectAll("text").on("mouseup", function(d) { 
+                          var selection = window.getSelection();
+                        console.log(selection.toString());
+                        });;
         }
-        //Color codes sequences on button press
+        //Checks color code value and changes sequence color accordingly
         function checkColor() {
 
                       if( isColor == true ) {
                         container.selectAll("#seqSpace")
                           .selectAll("text")
-                          .data(function(d) { return d.value; } )
                           .attr("class", "sequence");
                         isColor = false;
                         return ;
@@ -199,6 +272,7 @@
                         return ;
                       }
         };
+        //Color codes sequences based on base value
         function colorize() {
                         container.selectAll("#seqSpace")
                           .selectAll("text")
@@ -259,11 +333,8 @@
                                   .data(data)
                                   .enter()
                                   .append("div")
-                                  .attr("class", "row resizer");
-                //Creates row for consensus
-                var conRow    = parent.append("div")
-                                  .attr("class", "row collapse conRow resizer")
-                                  .attr("id", "conRow");
+                                  .attr("class", "row");
+
                 /* Names */
                 //Appends name column
                 var nameCol   = row.append("div")
@@ -288,6 +359,7 @@
                                     if ( i * 8.42 < nameWidth - 3 * 8.42 - 10) {
                                       return d; 
                                   }});
+
                 /* Sequences */
                 //Appends sequence columns
                 var sequences = row.append("div")
@@ -310,7 +382,7 @@
                                     //Truncates part that doesnt fit in window
                                     if ( (i - (cutoff ? cutoff : -1)) * 8.42 < seqWidth - 4 * 8.42 - 15) {
                                       //Saves last base to be entered
-                                      newCutOff = i;
+                                        newCutOff = i;
                                       //Checks for sameChar toggle
                                       if( isSame == false ) {
                                         return d;
@@ -329,11 +401,14 @@
                                 };
 
                 /* Consensus */
+                                //Creates row for consensus
+                var conRow    = parent.append("div")
+                                  .attr("class", "row collapse conRow")
+                                  .attr("id", "conRow");
                                 //Writes "Consensus" name plate
                                 conRow.append("div")
                                   .attr("class", "col-xs-1")
                                   .attr("data-toggle", "tooltip")
-                                  .attr("id", "conName")
                                   .append("p")
                                   .append("text")
                                   .text(function() {
@@ -342,14 +417,46 @@
                                       return "Consensus".substring(0, Math.floor(nameWidth / 8.42 ) - 3) + "...";
                                     else 
                                       return "Consensus";
-                                  })
+                                  });
                                 //Enters the consensus of the sequences
                                 conRow.append("div")
                                   .attr("class", "col-xs-11")
                                   .append("p")
                                   .append("text")
-                                  .text(conString.substring( cutoff ? cutoff + 1 : 0 , newCutOff + 1 ))
+                                  .text(conString.substring( cutoff ? 1 : 0 , newCutOff + 1 ))
                                   .attr("class", "conText");
+
+                /* Heat Map */
+                                //Creates annotation row
+                var annotRow  = parent.append("div")
+                                  .attr("class", "row");
+                                //Writes "Annotation" name plate
+                                annotRow.append("div")
+                                  .attr("class", "col-xs-1")
+                                  .attr("data-toggle", "tooltip")
+                                  .append("p")
+                                  .append("text")
+                                  .text(function() {
+                                    //Truncates if too long
+                                    if( "Annotation".length * 8.42 > nameWidth )
+                                      return "Annotation".substring(0, Math.floor(nameWidth / 8.42 ) - 3) + "...";
+                                    else 
+                                      return "Annotation";
+                                  });
+                                //Creates heatmap annotation
+                                annotRow.append("div")
+                                  .attr("class", "col-xs-11")
+                                  .append("p")
+                                  .selectAll("p")
+                                  .data(firstSequence)
+                                  .enter()
+                                  .append("text")
+                                  .text(function(d, i) { 
+                                    if( i > newCutOff - cutoff - (cutoff ? 1 : 0)) 
+                                      return "";
+                                    else
+                                      return "\u00A0";})
+                                  .style("background-color", function(d, i) { return heat(annotArray[i + cutoff + (cutoff ? 1 : 0) ]); });
             }
         }
     </script>
