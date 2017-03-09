@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <title>Comparing Seuqences with Bootstrap and D3</title>
+
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+
+    <!-- Bootstrap -->
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+
+    <!-- Minified D3 -->
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+  </head>
+  <style>
+      body{
+        font-family: "Lucida Console", Monaco, monospace;
+      }
+      div {
+        display: block;
+      }
+      text {
+        font-family: "Lucida Console", Monaco, monospace;
+      }
+      div[class*=container-fluid] {
+        padding-top: 0px;
+      }
+      div[class*=parent] {
+        padding-right: 0px;
+        padding-left: 10px;
+        padding-top: 5px;
+      }
+      div[class*=col-xs-11] {
+        padding-right: 0px;
+      }
+      .axis path{
+        stroke-width: 0px;
+      }
+      .axis line {
+        stroke-width: 1px;
+      }
+      p {
+        margin: 0;
+        padding: 0;
+        line-height: 14px;
+      }
+      .buttons {
+        padding-left: 10px;
+        padding-top: 10px;
+      }
+      .conRow {
+        white-space: nowrap;
+        font-style: italic;
+      }
+      .conText {
+        background-color: lightgray;
+      }
+      .bar {
+        fill: steelblue;
+        stroke: steelblue;
+      }
+      .adenine {
+        background-color: dodgerblue;
+      }
+      .cytosine {
+        background-color: orange;
+      }
+      .guanine {
+        background-color: lightgreen;
+      }
+      .thymine {
+        background-color: orchid;
+      }
+  </style>
+    <body>
+    <p class="buttons">
+      <button type="button" class="btn btn-primary btn-sm" onclick="checkColor()">Color Code</button>
+      <button type="button" class="btn btn-success btn-sm" onclick="sameChar()">Same Character</button>
+      <button type="button" class="btn btn-info btn-sm" data-toggle="collapse" data-target=".conRow">Consensus</button>
+    </p>
+    <script>
+        //Sample Data
+        var data = [
+          {"name": "Human", "value": "CGGTGGCCGTTATGTTCGTCATTCCGCCTAAACCGTCGAGGGGACATCGGACCTCGTACATTCTTCGAGCTATAGTCTTAGTTGGACATATGATCCGCTC"},
+          {"name": "Dog", "value":   "TGCCACACGACAGTTACCAAGGATGATACTGGACGTCGACCATCTTGGCTTTTTAGTGCTGACTGAGCAGGCGGATATTGGTCAACTTTGAGAATGTGTG"},
+          {"name": "Rat", "value":   "AGCAGAATACCCAAGCGTGTCGAGCGGCTCCACCGTCGACCATGATAGCACGGCGTTTGAACCTCGGTCTGGGTAAGATGGAGGCGATGTATTGTGGAAT"}
+        ];
+        /* Data Analysis */
+                            //Creates array based on first sequence
+        var firstSequence = data[0].value.split("");
+        var isColor       = false;
+        var isSame        = false;
+        var uncollapsed   = false;
+                            //Finds the consensus of the sequences for each base and stores this as a string
+        var conString     = findConsensus();
+                            //Finds location of completely continuous bases through each string and stores this in an array
+        var continuous    = findContinuous();
+                            //Finds how many continuous bases occur in a row and stores this as values in an array
+        var annotArray    = findHeat(continuous);
+                            //Creates scale for heat of each element
+        var heatScale     = d3.scaleLinear().domain([0, _.max(annotArray)]).range([0.1,25]);
+
+
+                            //Creates div container to hold everything
+        var container     = d3.select("body")
+                              .append("div")
+                              .attr("class", "container-fluid");
+
+        /* Axis */
+                            //Creates row for axis
+        var axisRow       = container.append("div")
+                              .attr("class", "row");
+                            //Creates column to keep axis aligned with sequences
+                            axisRow.append("div")
+                              .attr("class", "col-xs-1");   
+                            //Creates col for axis svg
+        var svgCol        = axisRow.append("div")
+                              .attr("class", "col-xs-11")
+                              .attr("id", "area");
+                            //Creates width variable as width of the whole column
+        var width         = parseInt(d3.select("#area").style("width"), 10);
+                            //Appends svg to top row
+        var svg           = svgCol.append("svg")
+                              .attr("width", width - 25)
+                              .attr("height", 25);
+                            //Horizontal scale
+        var xScale        = d3.scaleLinear()
+                              .domain([0, data[0].value.length])
+                              .range([0, data[0].value.length * 8.42]);
+                            //Creates axis
+        var xAxis         = d3.axisTop(xScale);
+                            //Calls the bottom axis
+                            svg.append("g")
+                              .attr("class", "axis")
+                              .attr("transform", "translate(-5,25)")
+                              .call(xAxis)
+                              .select("text").remove();
+        
+                            //Creates names, sequences, and annotations
+                            createData();                        
+                            //Resizes svg and its elements to fit to window
+                            d3.select(window).on('resize', resize);
+
+                            //Records when and what user highlights
+        var highlight     = d3.selectAll("#seqSpace").on("mouseup", selector);
+
+    /* Function Declarations */
+      //Creates names, sequences, and annotations
+      function createData() {
+        var newCutOff = 0;
+          //Creates new rows for sequences that were cut off by window. Appends remaining data to new rows
+          for( var cutoff = 0; cutoff != firstSequence.length - 1; cutoff = newCutOff ) {
+            /* Base divs */
+                                //Creates parent row for each data set
+                var parent    = container.append("div")
+                                  .attr("class", "row parent");
+                                //Creates row for each datum
+                var row       = parent.selectAll("rows")
+                                  .data(data)
+                                  .enter()
+                                  .append("div")
+                                  .attr("class", "row");
+
+            /* Raw Data */
+                /* Names */
+                                //Appends name column
+                var nameCol   = row.append("div")
+                                  .attr("class", "col-xs-1") 
+                                  .attr("id", "namePlate")
+                                  .attr("data-toggle", "tooltip")
+                                  .attr("title", function(d) { return d.name;})
+                                  .append("p");
+                                //Finds the width of the name column
+                var nameWidth = parseInt(d3.select('#namePlate').style('width'), 10);
+                                //Enters the names
+                                nameCol.selectAll("p")
+                                  .data(function(d, i) { return d.name.split(""); })
+                                  .enter()
+                                  .append("text")
+                                  .text(function(d, i) { 
+                                    //Truncates if name is too long
+                                    if( i * 8.42 >= nameWidth - 3 * 8.42 - 10) {
+                                      if( (i - 1) * 8.42 >= nameWidth - 3 * 8.42 - 10) { return ""; }
+                                      else { return "..."; } 
+                                    };
+                                    if ( i * 8.42 < nameWidth - 3 * 8.42 - 10) {
+                                      return d; 
+                                  }});
+                /* Sequences */
+                                //Creates sequence columns
+                var sequences = row.append("div")
+                                  .attr("class", "col-xs-11")
+                                  .attr("id", "seqSpace")
+                                  .append("p");
+                                //Finds the width of the sequence column
+                var seqWidth  = parseInt(d3.select('#seqSpace').style('width'), 10);
+                                //Enters the sequences
+                                sequences.selectAll("text")
+                                  .data(function(d) { return d.value; })
+                                  .enter()
+                                  .append("text")
+                                  .text(function(d, i) {
+                                    //Does not enter same base twice when wrapping data to new row                       
+                                    if ( i < cutoff )
+                                      return ;
+                                    if ( i != 0 && i == cutoff )
+                                      return ;
+                                    //Truncates part that does not fit in window
+                                    if ( (i - (cutoff ? cutoff + 1 :0)) * 8.42 < seqWidth - 4 * 8.42 - 15) {
+                                        //Saves last base to be entered
+                                        newCutOff = i;
+                                      //Checks for sameChar toggle after resize
+                                      if( isSame == false ) {
+                                        return d;
+                                      }
+                                      if( isSame == true ) {                       
+                                        if( d == firstSequence[i] )
+                                          return d;
+                                        else
+                                          return ".";
+                                      } 
+                                    }})
+                                  .attr("class", "sequence");
+                                //Checks for color code toggle after resize
+                                if( isColor == true ) {
+                                  colorize();
+                                };
+            /* Annotations */
+                /* Consensus */
+                                //Creates row for consensus
+                var conRow    = parent.append("div")
+                                  .attr("class", "row collapse conRow")
+                                  .attr("id", "conRow");
+                                //Writes "Consensus" name plate
+                                conRow.append("div")
+                                  .attr("class", "col-xs-1")
+                                  .attr("data-toggle", "tooltip")
+                                  .attr("title", "Consensus")
+                                  .append("p")
+                                  .append("text")
+                                  .text(function() {
+                                    //Truncates name if too long
+                                    if( "Consensus".length * 8.42 > nameWidth )
+                                      return "Consensus".substring(0, Math.floor(nameWidth / 8.42 ) - 3) + "...";
+                                    else 
+                                      return "Consensus";
+                                  });
+                                //Enters the consensus of the sequences
+                                conRow.append("div")
+                                  .attr("class", "col-xs-11")
+                                  .append("p")
+                                  .append("text")
+                                  .text(conString.substring( cutoff ? cutoff + 1: 0 , newCutOff + 1 ))
+                                  .attr("class", "conText");
+
+                /* Heat Map */
+                                //Creates annotation row
+                var annotRow  = parent.append("div")
+                                  .attr("class", "row");
+                                //Writes "Annotation" name plate
+                                annotRow.append("div")
+                                  .attr("class", "col-xs-1")
+                                  .attr("data-toggle", "tooltip")
+                                  .attr("title", "Frequency")
+                                  .append("p")
+                                  .append("text")
+                                  .text(function() {
+                                    //Truncates if too long
+                                    if( "Frequency".length * 8.42 > nameWidth )
+                                      return "Frequency".substring(0, Math.floor(nameWidth / 8.42 ) - 3) + "...";
+                                    else 
+                                      return "Frequency";
+                                  });
+                                //Creates bar graph annotation
+                                annotRow.append("div")
+                                  .attr("class", "col-xs-11")
+                                  .append("svg")
+                                  .attr("width", width)
+                                  .attr("height", 25)
+                                  .selectAll(".bar")
+                                  .data(annotArray)
+                                  .enter().append("rect")
+                                  .attr("class", "bar")
+                                  .attr("x", function(d,i) { 
+                                    if( i > newCutOff - cutoff - (cutoff ? 1 : 0))
+                                      return 0;
+                                    else
+                                      return 8.42 * i;})
+                                  .attr("y", function(d,i) { 
+                                    if( i > newCutOff - cutoff - (cutoff ? 1 : 0))
+                                      return 0;
+                                    else
+                                      return 25 - heatScale(annotArray[i + cutoff + (cutoff ? 1 : 0)]);})
+                                  .attr("width", 8.42)
+                                  .attr("height", function(d, i) {
+                                    if( i > newCutOff - cutoff - (cutoff ? 1 : 0))
+                                      return 0;
+                                    return heatScale(annotArray[i + cutoff + (cutoff ? 1 : 0) ]); });
+          }
+      }
+      //Resizes everything to fit into window
+      function resize() {
+                            //Axis width resize
+            width         = parseInt(d3.select("#area").style("width"), 10);
+                
+                            svgCol.selectAll("svg")
+                              .attr("width", width - 25);
+
+                            //Removes data that is outside window
+                            container.selectAll(".parent")
+                              .remove();
+                            //Recreates data inside window
+                            createData();
+
+                            //Redefines highlihgt for new sequences
+            highlight     = d3.selectAll("#seqSpace").on("mouseup", selector);
+      }
+      //Finds the most common base in each column and returns it as a string
+      function findConsensus() {
+        var consensus     = "";
+
+          //Counts each base's occurrence
+          for( var base = 0; base < firstSequence.length; base++ ) {
+            var compare = [];
+              for( var seq = 0; seq < data.length; seq++ ) {
+                compare[seq] = data[seq].value.split("")[base];
+              }
+
+            var countBase = _.countBy( compare);
+            var numBases  = [countBase.A, countBase.C, countBase.G, countBase.T];
+            var maximum   = _.max( numBases );
+
+            //Checks there is only one maximum
+            var indexMax  = _.indexOf( numBases, maximum );
+
+              //Appends most frequent base to consensus
+              if( indexMax == _.lastIndexOf( numBases, maximum ))
+                switch( indexMax ) {
+                  case 0: consensus += "A"; break;
+                  case 1: consensus += "C"; break;
+                  case 2: consensus += "G"; break;
+                  case 3: consensus += "T"; break;
+                }
+              else
+                consensus += "?";
+          }
+        return consensus;
+      }
+      //Find continuous values for the heatmap. Returns array of with element 1 for continuous base, 0 otherwise
+      function findContinuous() {
+        var annotation    = [];
+
+          //Counts each bases' occurence
+          for( var base = 0; base < firstSequence.length; base++ ) {
+            var compare = [];
+
+              for( var seq = 0; seq < data.length; seq++ ) {
+                compare[seq] = data[seq].value.split("")[base];
+              }
+
+            //Checks that base is continuous
+            (_.uniq(compare).length == 1) ? annotation[base] = 1 : annotation[base] = 0;
+          }
+
+        return annotation;
+      }
+      //Uses array of 0's and 1's to find how "hot" each element of the heat map is. Returns array with heat values
+      function findHeat(array) {
+                            //Creates 0 array
+        var heatArray     = Array.apply(null, Array(firstSequence.length)).map(Number.prototype.valueOf,0);
+        var count         = 0;
+          for( var i = 0; i < firstSequence.length; ) {
+            var a = 0;
+              if( array[i] == 1) {
+                count = _.indexOf(array.slice(i), 0);
+
+                  for( var j = 0; j < count; j++) {
+                    if( j == count / 2 ) {
+                      heatArray[i] = a;
+                      i++;
+                    }
+                    (j < count / 2) ? a++ : a--;
+                    heatArray[i] = a;
+                    i++;
+                  }
+              }
+              else
+                i++;
+          }
+
+                return heatArray;
+      }
+      //Checks color code value and changes sequence color accordingly
+      function checkColor() {
+        if( isColor == true ) {
+          container.selectAll("#seqSpace")
+            .selectAll("text")
+            .attr("class", "sequence");
+          isColor = false;
+          return ;
+        };
+        if( isColor == false ) {
+          isColor = true;
+          colorize();
+          return ;
+        }
+      }
+      //Color codes sequences based on base value
+      function colorize() {
+        container.selectAll("#seqSpace")
+          .selectAll("text")
+          .data(function(d) { return d.value; } )
+          .attr("class", function(d) {
+            if( d == "A")
+              return "adenine";
+            if( d == "C")
+              return "cytosine";
+            if( d == "G")
+              return "guanine";
+            if( d == "T")
+              return "thymine";});
+      }
+      //Removes characters that do not match the first sequence on button press
+      function sameChar() {
+        var box = 0;
+        var seqWidth = parseInt(d3.select('#seqSpace').style('width'), 10);
+          for( var end = 0; end != firstSequence.length - 1; box++ ) {
+            container.selectAll(".parent")
+              .filter(function(d, i) { return i === box; })
+              .selectAll("#seqSpace")
+              .selectAll("text")
+              .data(function(d) { return d.value; })
+              .text(function(d, i) {
+                    if ( i < end )
+                      return ;
+                    if ( i != 0 && i == end )
+                      return ;
+                      //Truncates part that doesnt fit in window
+                    if ( (i - (end ? end + 1 : 0)) * 8.42 < seqWidth - 4 * 8.42 - 15 ) {
+                      //Saves last base to be entered
+                      newEnd = i;
+                      if( isSame == false ) {                       
+                        if( d == firstSequence[i] )
+                          return d;
+                        else
+                          return ".";
+                      };
+                      if( isSame == true )
+                        return d;}}); 
+            end = newEnd;
+          };
+        isSame = !isSame;
+      }   
+      //Manages users selections
+      function selector() {
+        var selection = window.getSelection();
+        console.log(selection.toString());
+
+        var range = selection.getRangeAt(0);          
+      }      
+    </script>
+  </body>
+</html>
