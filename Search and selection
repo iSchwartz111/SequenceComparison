@@ -207,21 +207,22 @@
                                   .attr("title", function(d) { return d.name;})
                                   .append("p");
                                 //Finds the width of the name column
-                var nameWidth = parseInt(d3.select('#namePlate').style('width'), 10);
+                if( cutoff == 0 )
+                  var nameWidth = Math.floor(( parseInt(d3.select('#namePlate').style('width'), 10) - 3 * 8.42 - 10 ) / 8.42);
+
                                 //Enters the names
                                 nameCol.selectAll("p")
                                   .data(function(d, i) { return d.name.split(""); })
                                   .enter()
                                   .append("text")
+                                  .filter( function(d, i) { return i <= nameWidth; })
                                   .text(function(d, i) { 
                                     //Truncates if name is too long
-                                    if( i * 8.42 >= nameWidth - 3 * 8.42 - 10) {
-                                      if( (i - 1) * 8.42 >= nameWidth - 3 * 8.42 - 10) { return ""; }
-                                      else { return "..."; } 
-                                    };
-                                    if ( i * 8.42 < nameWidth - 3 * 8.42 - 10) {
+                                    if( i == nameWidth )
+                                      return "...";
+                                    else
                                       return d; 
-                                  }});
+                                  });
                 /* Sequences */
                                 //Creates sequence columns
                 var sequences = row.append("div")
@@ -230,33 +231,30 @@
                                   .append("p")
                                   .attr("id", "seqValue");
                                 //Finds the width of the sequence column
-                var seqWidth  = parseInt(d3.select('#seqSpace').style('width'), 10);
+                var temp      = cutoff ? cutoff + 1 : 0;
+                if( cutoff == 0 )
+                  var seqWidth  = Math.floor((parseInt(d3.select('#seqSpace').style('width'), 10) - 4 * 8.42 - 15)/8.42) + temp;
                                 //Enters the sequences
                                 sequences.selectAll("text")
                                   .data(function(d) { return d.value; })
                                   .enter()
+                                  .filter( function(d, i) { return i < seqWidth })
                                   .append("text")
                                   .text(function(d, i) {
                                     //Does not enter same base twice when wrapping data to new row                       
-                                    if ( i < cutoff )
+                                    if ( i < cutoff || i != 0 && i == cutoff  )
                                       return ;
-                                    if ( i != 0 && i == cutoff )
-                                      return ;
-                                    //Truncates part that does not fit in window
-                                    if ( (i - (cutoff ? cutoff + 1 :0)) * 8.42 < seqWidth - 4 * 8.42 - 15) {
-                                        //Saves last base to be entered
-                                        newCutOff = i;
+                                    newCutOff = i;
                                       //Checks for sameChar toggle after resize
-                                      if( isSame == false ) {
+                                    if( isSame ) {                       
+                                      if( d == firstSequence[i] )
                                         return d;
-                                      }
-                                      if( isSame == true ) {                       
-                                        if( d == firstSequence[i] )
-                                          return d;
-                                        else
-                                          return ".";
-                                      } 
-                                    }})
+                                      else
+                                        return ".";
+                                    } 
+                                    else
+                                      return d;
+                                    })
                                   .attr("class", "sequence")
                                   .attr("class", function(d, i) { return i;});
                                 //Checks for color code toggle after resize
@@ -278,8 +276,8 @@
                                   .append("text")
                                   .text(function() {
                                     //Truncates name if too long
-                                    if( "Consensus".length * 8.42 > nameWidth )
-                                      return "Consensus".substring(0, Math.floor(nameWidth / 8.42 ) - 3) + "...";
+                                    if( "Consensus".length > nameWidth )
+                                      return "Consensus".substring(0, Math.floor(nameWidth)) + "...";
                                     else 
                                       return "Consensus";
                                   });
@@ -288,7 +286,7 @@
                                   .attr("class", "col-xs-11")
                                   .append("p")
                                   .append("text")
-                                  .text(conString.substring( cutoff ? cutoff + 1: 0 , newCutOff + 1 ))
+                                  .text(conString.substring( temp , newCutOff + 1 ))
                                   .attr("class", "conText");
                 /* Heat Map */
                                 //Creates annotation row
@@ -303,11 +301,12 @@
                                   .append("text")
                                   .text(function() {
                                     //Truncates if too long
-                                    if( "Frequency".length * 8.42 > nameWidth )
-                                      return "Frequency".substring(0, Math.floor(nameWidth / 8.42 ) - 3) + "...";
+                                    if( "Frequency".length > nameWidth )
+                                      return "Frequency".substring(0, Math.floor(nameWidth)) + "...";
                                     else 
                                       return "Frequency";
                                   });
+                                temp = cutoff + (cutoff ? 1 : 0);
                                 //Creates heatmap annotation
                                 annotRow.append("div")
                                   .attr("class", "col-xs-11")
@@ -316,13 +315,10 @@
                                   .data(firstSequence)
                                   .enter()
                                   .append("text")
-                                  .text(function(d, i) { 
-                                    if( i > newCutOff - cutoff - (cutoff ? 1 : 0)) 
-                                      return "";
-                                    else
-                                      return "\u00A0";})
-                                  .style("background-color", function(d, i) { return heat(heatScale(annotArray[i + cutoff + (cutoff ? 1 : 0) ])); })
-                                  .style("stroke", function(d, i) { return heat(heatScale(annotArray[i + cutoff + (cutoff ? 1 : 0) ] )); });
+                                  .filter( function(d, i) { return i <= newCutOff - cutoff - ( cutoff ? 1 : 0 );})
+                                  .text("\u00A0")
+                                  .style("background-color", function(d, i) { return heat(heatScale(annotArray[ i + temp ])); })
+                                  .style("stroke", function(d, i) { return heat(heatScale(annotArray[ i + temp ] )); });
           }
       }
       //Resizes everything to fit into window
@@ -446,32 +442,32 @@
       //Removes characters that do not match the first sequence on button press
       function sameChar() {
         var box = 0;
-        var seqWidth = parseInt(d3.select('#seqSpace').style('width'), 10);
+        var newEnd;
+        var seqWidth = Math.floor((parseInt(d3.select('#seqSpace').style('width'), 10) - 4 * 8.42 - 15)/8.42);
           for( var end = 0; end != firstSequence.length - 1; box++ ) {
             container.selectAll(".parent")
               .filter(function(d, i) { return i === box; })
               .selectAll("#seqSpace")
               .selectAll("text")
               .data(function(d) { return d.value; })
+              .filter(function(d, i) { return i < seqWidth + (end ? end + 1 : 0); })
               .text(function(d, i) {
-                    if ( i < end )
+                    if ( i < end || i != 0 && i == end )
                       return ;
-                    if ( i != 0 && i == end )
-                      return ;
-                      //Truncates part that doesnt fit in window
-                    if ( (i - (end ? end + 1 : 0)) * 8.42 < seqWidth - 4 * 8.42 - 15 ) {
+                    //Truncates part that doesnt fit in window
                       //Saves last base to be entered
                       newEnd = i;
-                      if( isSame == false ) {                       
+                      if( isSame )
+                        return d;
+                      else {                     
                         if( d == firstSequence[i] )
                           return d;
                         else
                           return ".";
                       };
-                      if( isSame == true )
-                        return d;}}); 
-            end = newEnd;
-          };
+              });
+              end = newEnd;
+          }
         isSame = !isSame;
       }   
       //Finds users selection index
