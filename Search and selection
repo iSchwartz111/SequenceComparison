@@ -207,8 +207,7 @@
                                   .attr("title", function(d) { return d.name;})
                                   .append("p");
                                 //Finds the width of the name column
-                if( cutoff == 0 )
-                  var nameWidth = Math.floor(( parseInt(d3.select('#namePlate').style('width'), 10) - 3 * 8.42 - 10 ) / 8.42);
+                var nameWidth = Math.floor(( parseInt(d3.select('#namePlate').style('width'), 10) - 3 * 8.42 - 10 ) / 8.42);
 
                                 //Enters the names
                                 nameCol.selectAll("p")
@@ -232,8 +231,7 @@
                                   .attr("id", "seqValue");
                                 //Finds the width of the sequence column
                 var temp      = cutoff ? cutoff + 1 : 0;
-                if( cutoff == 0 )
-                  var seqWidth  = Math.floor((parseInt(d3.select('#seqSpace').style('width'), 10) - 4 * 8.42 - 15)/8.42) + temp;
+                var seqWidth  = Math.floor((parseInt(d3.select('#seqSpace').style('width'), 10) - 4 * 8.42 - 15)/8.42) + temp;
                                 //Enters the sequences
                                 sequences.selectAll("text")
                                   .data(function(d) { return d.value; })
