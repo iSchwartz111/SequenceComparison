@@ -29,6 +29,9 @@
   </head>
   <style>
       body{
+        font-family: "Trebuchet MS";
+      }
+      container {
         font-family: "Lucida Console", Monaco, monospace;
       }
       div {
@@ -66,6 +69,9 @@
       .conRow {
         white-space: nowrap;
         font-style: italic;
+      }
+      #inputAnchor, #inputFocus{
+        width: 127px !important;
       }
       .conText {
         background-color: lightgray;
@@ -275,7 +281,7 @@
                                   .text(function() {
                                     //Truncates name if too long
                                     if( "Consensus".length > nameWidth )
-                                      return "Consensus".substring(0, Math.floor(nameWidth)) + "...";
+                                      return "Consensus".substring(0, nameWidth) + "...";
                                     else 
                                       return "Consensus";
                                   });
@@ -300,7 +306,7 @@
                                   .text(function() {
                                     //Truncates if too long
                                     if( "Frequency".length > nameWidth )
-                                      return "Frequency".substring(0, Math.floor(nameWidth)) + "...";
+                                      return "Frequency".substring(0, nameWidth) + "...";
                                     else 
                                       return "Frequency";
                                   });
