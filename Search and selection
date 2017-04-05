@@ -207,7 +207,7 @@
                                   .attr("title", function(d) { return d.name;})
                                   .append("p");
                                 //Finds the width of the name column
-                var nameWidth = Math.floor(( parseInt(d3.select('#namePlate').style('width'), 10) - 3 * 8.42 - 10 ) / 8.42);
+                var nameWidth = Math.floor(( parseInt(d3.select('#namePlate').style('width'), 10) - 3 * 8.42 ) / 8.42);
 
                                 //Enters the names
                                 nameCol.selectAll("p")
