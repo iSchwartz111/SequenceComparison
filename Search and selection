@@ -39,6 +39,7 @@
       }
       text {
         font-family: "Lucida Console", Monaco, monospace;
+        overflow-x: hidden;
       }
       div[class*=container-fluid] {
         padding-top: 0px;
@@ -94,42 +95,50 @@
   </style>
     <body>
       <nav class="navbar navbar-default">
-      <div class="container-fluid">
-      <!-- Toggle buttons -->
-      <form class="navbar-form navbar-left">
-        <button type="button" class="btn btn-primary btn-sm" onclick="checkColor()">Color Code</button>
-        <button type="button" class="btn btn-success btn-sm" onclick="sameChar()">Same Character</button>
-        <button type="button" class="btn btn-info btn-sm" data-toggle="collapse" data-target=".conRow">Consensus</button>
-      </form>
-      <!-- Search bars -->
-      <form class="navbar-form navbar-left">
-        <div class="form-group">
-          <input type="text" class="form-control input-sm" id="inputAnchor" placeholder="Anchor index...">
+        <div class="container-fluid">
+          <!-- Toggle buttons -->
+          <form class="navbar-form navbar-left">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#myNavbar">
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>                        
+            </button>
+            <div class="collapse navbar-collapse" id="myNavbar">
+              <button type="button" class="btn btn-primary btn-sm" onclick="checkColor()">Color Code</button>
+              <button type="button" class="btn btn-success btn-sm" onclick="sameChar()">Same Character</button>
+              <button type="button" class="btn btn-info btn-sm" data-toggle="collapse" data-target=".conRow">Consensus</button>
+              <!-- Search bars -->
+              <div class="form-group">
+                <input type="text" class="form-control input-sm" id="inputAnchor" placeholder="Anchor index...">
+              </div>
+              <div class="form-group">
+                <input type="text" class="form-control input-sm" id="inputFocus" placeholder="Focus index...">
+              </div>
+              <button type="button" class="btn btn-default btn-sm" onclick="searcher()"><span class="glyphicon glyphicon-search"></span></button>
+              <!-- Clear button -->
+              <button type="button" class="btn btn-warning btn-sm" onclick="clearText()">Clear Selection</button>
+            </div>
+          </form>
         </div>
-        <div class="form-group">
-          <input type="text" class="form-control input-sm" id="inputFocus" placeholder="Focus index...">
-        </div>
-        <button type="button" class="btn btn-default btn-sm" onclick="searcher()"><span class="glyphicon glyphicon-search"></span></button>
-      </form>
-      <!-- Clear button -->
-      <form class="navbar-form nabar-left">
-        <button type="button" class="btn btn-warning btn-sm" onclick="clearText()">Clear Selection</button>
-      </form>
-      </div>
       </nav>
     <script>
-        //Sample Data
+
+            //Sample Data
         var data = [
           {"name": "Human", "value": "CGGTGGCCGTTATGTTCGTCATTCCGCCTAAACCGTCGAGGGGACATCGGACCTCGTACATTCTTCGAGCTATAGTCTTAGTTGGACATATGATCCGCTC"},
           {"name": "Dog", "value":   "TGCCACACGACAGTTACCAAGGATGATACTGGACGTCGACCATCTTGGCTTTTTAGTGCTGACTGAGCAGGCGGATATTGGTCAACTTTGAGAATGTGTG"},
           {"name": "Rat", "value":   "AGCAGAATACCCAAGCGTGTCGAGCGGCTCCACCGTCGACCATGATAGCACGGCGTTTGAACCTCGGTCTGGGTAAGATGGAGGCGATGTATTGTGGAAT"}
         ];
-        /* Data Analysis */
-                            //Creates array based on first sequence
-        var firstSequence = data[0].value.split("");
+
+    var comparison = (function() {
         var isColor       = false;
         var isSame        = false;
         var uncollapsed   = false;
+
+        /* Data Analysis */
+                            //Creates array based on first sequence
+        var firstSequence = data[0].value.split("");
+
                             //Finds the consensus of the sequences for each base and stores this as a string
         var conString     = findConsensus();
                             //Finds location of completely continuous bases through each string and stores this in an array
@@ -172,7 +181,7 @@
                             //Calls the bottom axis
                             svg.append("g")
                               .attr("class", "axis")
-                              .attr("transform", "translate(-5,25)")
+                              .attr("transform", "translate(-8.5,25)")
                               .call(xAxis)
                               .select("text").remove();
         
@@ -185,8 +194,6 @@
                             d3.selectAll("#seqSpace").on("mouseup", selectText);
                             d3.selectAll("#seqSpace").on("mousedown", selectText);
 
-
-                            
     /* Function Declarations */
       //Creates names, sequences, and annotations
       function createData() {
@@ -233,8 +240,7 @@
                 var sequences = row.append("div")
                                   .attr("class", "col-xs-11")
                                   .attr("id", "seqSpace")
-                                  .append("p")
-                                  .attr("id", "seqValue");
+                                  .append("p");
                                 //Finds the width of the sequence column
                 var temp      = cutoff ? cutoff + 1 : 0;
                 var seqWidth  = Math.floor((parseInt(d3.select('#seqSpace').style('width'), 10) - 4 * 8.42 - 15)/8.42) + temp;
@@ -260,7 +266,9 @@
                                       return d;
                                     })
                                   .attr("class", "sequence")
+                                  //Labels each base as their index for selecting later
                                   .attr("class", function(d, i) { return i;});
+
                                 //Checks for color code toggle after resize
                                 if( isColor == true ) {
                                   colorize();
@@ -480,7 +488,10 @@
         var anchor        = selection.anchorNode.parentElement.className;
         var focus         = selection.focusNode.parentElement.className;
 
-                            searchSelected(anchor, focus);
+            document.getElementById("inputAnchor").value = (parseInt(anchor) + 1);
+            document.getElementById("inputFocus").value  = (parseInt(focus) + 1);
+
+            searchSelected(anchor, focus);
       }   
       //Clears all selections
       function clearText() {
@@ -509,6 +520,7 @@
         var focus         = document.getElementById("inputFocus").value - 1;
                             searchSelected(anchor, focus);
       }
+    })()
     </script>
   </body>
 </html>
