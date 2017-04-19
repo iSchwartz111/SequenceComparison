@@ -108,8 +108,8 @@
               <span class="icon-bar"></span>                        
             </button>
             <div class="collapse navbar-collapse" id="myNavbar">
-              <button type="button" class="btn btn-primary btn-sm" onclick="checkColor()">Color Code</button>
-              <button type="button" class="btn btn-success btn-sm" onclick="sameChar()">Same Character</button>
+              <button type="button" class="btn btn-primary btn-sm" id="color">Color Code</button>
+              <button type="button" class="btn btn-success btn-sm" id="same">Same Character</button>
               <button type="button" class="btn btn-info btn-sm" data-toggle="collapse" data-target=".conRow">Consensus</button>
               <!-- Search bars -->
               <div class="form-group">
@@ -118,9 +118,9 @@
               <div class="form-group">
                 <input type="text" class="form-control input-sm" id="inputFocus" placeholder="Focus index...">
               </div>
-              <button type="button" class="btn btn-default btn-sm" onclick="searcher()"><span class="glyphicon glyphicon-search"></span></button>
+              <button type="button" class="btn btn-default btn-sm" id="search"><span class="glyphicon glyphicon-search"></span></button>
               <!-- Clear button -->
-              <button type="button" class="btn btn-warning btn-sm" onclick="clearText()">Clear Selection</button>
+              <button type="button" class="btn btn-warning btn-sm" id="clear">Clear Selection</button>
             </div>
           </form>
         </div>
@@ -135,7 +135,6 @@
       ];
 
       seqcompare("body");
-
     </script>
   </body>
 </html>
