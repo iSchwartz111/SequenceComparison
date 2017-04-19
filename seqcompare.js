@@ -9,7 +9,7 @@
 
     this.isColor       = false;
     this.isSame        = false;
-    var uncollapsed   = false;
+    var uncollapsed    = false;
 
 
     /* Data Analysis */
@@ -39,7 +39,7 @@
                         axisRow.append("div")
                           .attr("class", "col-xs-1");   
                         //Creates col for axis svg
-    var svgCol        = axisRow.append("div")
+    this.svgCol        = axisRow.append("div")
                           .attr("class", "col-xs-11")
                           .attr("id", "area");
                         //Creates width variable as width of the whole column
@@ -64,11 +64,17 @@
                         //Creates names, sequences, and annotations
                         createData();                        
                         //Resizes svg and its elements to fit to window
-                        d3.select(window).on('resize', resize);
+                        d3.select(window).on('resize', _.throttle( resize, 500, {leading: false} ));
 
                         //Records when and what user highlights
                         d3.selectAll("#seqSpace").on("mouseup", selectText);
                         d3.selectAll("#seqSpace").on("mousedown", selectText);
+
+                        //Monitors when toolbar buttons and searcher is used
+                        d3.select("#color").on("mouseup", checkColor);
+                        d3.select("#same").on("mouseup", sameChar);
+                        d3.select("#search").on("mouseup", searcher);
+                        d3.select("#clear").on("mouseup", clearText);
 
   };
 
@@ -220,7 +226,7 @@
                         //Axis width resize
         width         = parseInt(d3.select("#area").style("width"), 10);
             
-                        svgCol.selectAll("svg")
+                        this.svgCol.selectAll("svg")
                           .attr("width", width - 25);
 
                         //Removes data that is outside window
@@ -308,14 +314,13 @@
   }
 
   //Checks color code value and changes sequence color accordingly
-  function checkColor() {
-    var self = this;
+  var checkColor = function(elem) {
 
     if( self.isColor === true ) {
       container.selectAll("#seqSpace")
         .selectAll("text")
         .attr("class", "sequence");
-      isColor = false;
+      self.isColor = false;
       return ;
     }
 
@@ -324,7 +329,7 @@
       colorize();
       return ;
     }
-  }
+  };
 
   //Color codes sequences based on base value
   function colorize() {
