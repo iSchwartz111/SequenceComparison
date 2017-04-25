@@ -70,7 +70,6 @@
                         d3.selectAll("#seqSpace").on("mouseup", selectText);
                         d3.selectAll("#seqSpace").on("mousedown", selectText);
 
-                        //Monitors when toolbar buttons and searcher is used
                         d3.select("#color").on("mouseup", checkColor);
                         d3.select("#same").on("mouseup", sameChar);
                         d3.select("#search").on("mouseup", searcher);
@@ -154,7 +153,7 @@
                                 })
                               .attr("class", "sequence")
                               //Labels each base as their index for selecting later
-                              .attr("class", function(d, i) { return i;});
+                              .attr("data-index", function(d, i) { return i;});
 
                             //Checks for color code toggle after resize
                             if( self.isColor === true ) {
@@ -384,12 +383,11 @@
   //Finds users selection index
   function selectText() {
     var selection     = window.getSelection();
-    var anchor        = selection.anchorNode.parentElement.className;
-    var focus         = selection.focusNode.parentElement.className;
+    var anchor        = selection.anchorNode.parentElement.getAttribute("data-index");
+    var focus         = selection.focusNode.parentElement.getAttribute("data-index");
 
         document.getElementById("inputAnchor").value = (parseInt(anchor) + 1);
         document.getElementById("inputFocus").value  = (parseInt(focus) + 1);
-
         searchSelected(anchor, focus);
   }   
 
