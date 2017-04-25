@@ -37,7 +37,8 @@
                           .attr("class", "row");
                         //Creates column to keep axis aligned with sequences
                         axisRow.append("div")
-                          .attr("class", "col-xs-1");   
+                          .attr("class", "col-xs-1")
+                          .attr("id", "nameArea");
                         //Creates col for axis svg
     this.svgCol        = axisRow.append("div")
                           .attr("class", "col-xs-11")
@@ -82,6 +83,10 @@
   function createData() {
 
     var self = this;
+    var seqWidth         = Math.floor((parseInt(d3.select("#area").style("width"), 10) - 4 * 8.42 - 15)/8.42);
+    var nameWidth        = Math.floor((parseInt(d3.select("#nameArea").style("width"), 10) - 3 * 8.42)/8.42);
+    var newCutOff = 0;
+    var self = this;
 
     var newCutOff = 0;
       //Creates new rows for sequences that were cut off by window. Appends remaining data to new rows
@@ -89,13 +94,13 @@
         /* Base divs */
                             //Creates parent row for each data set
             var parent    = self.container.append("div")
-                              .attr("class", "row parent");
+                              .attr("class", "parent");
                             //Creates row for each datum
             var row       = parent.selectAll("rows")
                               .data(data)
                               .enter()
                               .append("div")
-                              .attr("class", "row");
+                              .attr("class", "dataRow");
         /* Raw Data */
             /* Names */
                             //Appends name column
@@ -105,14 +110,12 @@
                               .attr("data-toggle", "tooltip")
                               .attr("title", function(d) { return d.name;})
                               .append("p");
-                            //Finds the width of the name column
-            var nameWidth = Math.floor(( parseInt(d3.select('#namePlate').style('width'), 10) - 3 * 8.42 ) / 8.42);
 
                             //Enters the names
                             nameCol.selectAll("p")
                               .data(function(d, i) { return d.name.split(""); })
                               .enter()
-                              .append("text")
+                              .append("span")
                               .filter( function(d, i) { return i <= nameWidth; })
                               .text(function(d, i) { 
                                 //Truncates if name is too long
@@ -129,13 +132,13 @@
                               .append("p");
                             //Finds the width of the sequence column
             var temp      = cutoff ? cutoff + 1 : 0;
-            var seqWidth  = Math.floor((parseInt(d3.select('#seqSpace').style('width'), 10) - 4 * 8.42 - 15)/8.42) + temp;
+                            seqWidth += temp;
                             //Enters the sequences
                             sequences.selectAll("text")
                               .data(function(d) { return d.value; })
                               .enter()
                               .filter( function(d, i) { return i < seqWidth;})
-                              .append("text")
+                              .append("span")
                               .text(function(d, i) {
                                 //Does not enter same base twice when wrapping data to new row                       
                                 if ( i < cutoff || i !== 0 && i == cutoff  )
@@ -163,7 +166,7 @@
             /* Consensus */
                             //Creates row for consensus
             var conRow    = parent.append("div")
-                              .attr("class", "row collapse conRow")
+                              .attr("class", "collapse conRow")
                               .attr("id", "conRow");
                             //Writes "Consensus" name plate
                             conRow.append("div")
@@ -171,7 +174,7 @@
                               .attr("data-toggle", "tooltip")
                               .attr("title", "Consensus")
                               .append("p")
-                              .append("text")
+                              .append("span")
                               .text(function() {
                                 //Truncates name if too long
                                 if( "Consensus".length > nameWidth )
@@ -183,20 +186,19 @@
                             conRow.append("div")
                               .attr("class", "col-xs-11")
                               .append("p")
-                              .append("text")
+                              .append("span")
                               .text(self.conString.substring( temp , newCutOff + 1 ))
                               .attr("class", "conText");
             /* Heat Map */
                             //Creates annotation row
-            var annotRow  = parent.append("div")
-                              .attr("class", "row");
+            var annotRow  = parent.append("div");
                             //Writes "Annotation" name plate
                             annotRow.append("div")
                               .attr("class", "col-xs-1")
                               .attr("data-toggle", "tooltip")
                               .attr("title", "Frequency")
                               .append("p")
-                              .append("text")
+                              .append("span")
                               .text(function() {
                                 //Truncates if too long
                                 if( "Frequency".length > nameWidth )
@@ -212,7 +214,7 @@
                               .selectAll("p")
                               .data(firstSequence)
                               .enter()
-                              .append("text")
+                              .append("span")
                               .filter( function(d, i) { return i <= newCutOff - cutoff - ( cutoff ? 1 : 0 );})
                               .text("\u00A0")
                               .style("background-color", function(d, i) { return self.heat(self.heatScale(self.annotArray[ i + temp ])); })
@@ -317,7 +319,7 @@
 
     if( self.isColor === true ) {
       container.selectAll("#seqSpace")
-        .selectAll("text")
+        .selectAll("span")
         .attr("class", "sequence");
       self.isColor = false;
       return ;
@@ -333,7 +335,7 @@
   //Color codes sequences based on base value
   function colorize() {
     container.selectAll("#seqSpace")
-      .selectAll("text")
+      .selectAll("span")
       .data(function(d) { return d.value; } )
       .attr("class", function(d) {
         if( d == "A")
@@ -357,7 +359,7 @@
         container.selectAll(".parent")
           .filter(function(d, i) { return i === box; })
           .selectAll("#seqSpace")
-          .selectAll("text")
+          .selectAll("span")
           .data(function(d) { return d.value; })
           .filter(function(d, i) { return i < seqWidth + (end ? end + 1 : 0); })
           .text(function(d, i) {
@@ -394,7 +396,7 @@
   //Clears all selections
   function clearText() {
                         d3.selectAll("#seqSpace")
-                          .selectAll("text")
+                          .selectAll("span")
                           .attr("id", "none");
   } 
 
@@ -402,11 +404,11 @@
   function searchSelected(anchor, focus) {
 
                         d3.selectAll("#seqSpace")
-                          .selectAll("text")
+                          .selectAll("span")
                           .attr("id", "none");
 
                         d3.selectAll("#seqSpace")
-                          .selectAll("text")
+                          .selectAll("span")
                           .filter( function(d, i) { return i <= Math.max(anchor, focus); })
                           .attr("id", function(d, i) {
                             if( i >= Math.min(anchor, focus) )
