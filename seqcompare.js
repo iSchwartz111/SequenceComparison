@@ -38,7 +38,7 @@
                         //Creates column to keep axis aligned with sequences
                         axisRow.append("div")
                           .attr("class", "col-xs-1")
-                          .attr("id", "nameArea");
+                          .attr("id", "nameArea");   
                         //Creates col for axis svg
     this.svgCol        = axisRow.append("div")
                           .attr("class", "col-xs-11")
@@ -83,24 +83,23 @@
   function createData() {
 
     var self = this;
+    var newCutOff = 0;
+    //Finds the width of the sequence column
     var seqWidth         = Math.floor((parseInt(d3.select("#area").style("width"), 10) - 4 * 8.42 - 15)/8.42);
+    //Finds the width of the name column
     var nameWidth        = Math.floor((parseInt(d3.select("#nameArea").style("width"), 10) - 3 * 8.42)/8.42);
-    var newCutOff = 0;
-    var self = this;
-
-    var newCutOff = 0;
       //Creates new rows for sequences that were cut off by window. Appends remaining data to new rows
       for( var cutoff = 0; cutoff != firstSequence.length - 1; cutoff = newCutOff ) {
         /* Base divs */
                             //Creates parent row for each data set
             var parent    = self.container.append("div")
-                              .attr("class", "parent");
+                              .attr("class", "row parent");
                             //Creates row for each datum
             var row       = parent.selectAll("rows")
                               .data(data)
                               .enter()
                               .append("div")
-                              .attr("class", "dataRow");
+                              .attr("class", "row");
         /* Raw Data */
             /* Names */
                             //Appends name column
@@ -109,6 +108,7 @@
                               .attr("id", "namePlate")
                               .attr("data-toggle", "tooltip")
                               .attr("title", function(d) { return d.name;})
+                              .attr("data-placement", "right")
                               .append("p");
 
                             //Enters the names
@@ -132,7 +132,7 @@
                               .append("p");
                             //Finds the width of the sequence column
             var temp      = cutoff ? cutoff + 1 : 0;
-                            seqWidth += temp;
+                seqWidth  += temp;
                             //Enters the sequences
                             sequences.selectAll("text")
                               .data(function(d) { return d.value; })
@@ -166,13 +166,14 @@
             /* Consensus */
                             //Creates row for consensus
             var conRow    = parent.append("div")
-                              .attr("class", "collapse conRow")
+                              .attr("class", "row collapse conRow")
                               .attr("id", "conRow");
                             //Writes "Consensus" name plate
                             conRow.append("div")
                               .attr("class", "col-xs-1")
                               .attr("data-toggle", "tooltip")
                               .attr("title", "Consensus")
+                              .attr("data-placement", "right")
                               .append("p")
                               .append("span")
                               .text(function() {
@@ -191,12 +192,14 @@
                               .attr("class", "conText");
             /* Heat Map */
                             //Creates annotation row
-            var annotRow  = parent.append("div");
+            var annotRow  = parent.append("div")
+                              .attr("class", "row");
                             //Writes "Annotation" name plate
                             annotRow.append("div")
                               .attr("class", "col-xs-1")
                               .attr("data-toggle", "tooltip")
                               .attr("title", "Frequency")
+                              .attr("data-placement", "right")
                               .append("p")
                               .append("span")
                               .text(function() {
