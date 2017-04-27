@@ -42,9 +42,7 @@
         display: block;
       }
       span {
-        font-family: "Lucida Console", Monaco, monospace;
-        overflow-x: hidden;
-      }
+        font-family: "Lucida Console", Monaco, monospace;      }
       div[class*=container-fluid] {
         padding-top: 0px;
       }
@@ -70,6 +68,9 @@
       .buttons {
         padding-left: 10px;
         padding-top: 10px;
+      }
+      #namePlate {
+        overflow: hidden;
       }
       .conRow {
         white-space: nowrap;
@@ -127,6 +128,9 @@
       </nav>
     <script>
 
+      $(document).ready(function(){
+      $('[data-toggle="tooltip"]').tooltip(); 
+      });
       //Sample Data
       var data = [
         {"name": "Human", "value": "CGGTGGCCGTTATGTTCGTCATTCCGCCTAAACCGTCGAGGGGACATCGGACCTCGTACATTCTTCGAGCTATAGTCTTAGTTGGACATATGATCCGCTC"},
